@@ -1,5 +1,5 @@
 # Problem Set 4B
-# Name: <your name here>
+# Name: Kevin DeAngeles
 # Collaborators:
 # Time Spent: x:xx
 
@@ -70,7 +70,8 @@ class Message(object):
             self.message_text (string, determined by input text)
             self.valid_words (list, determined using helper function load_words)
         '''
-        pass #delete this line and replace with your code here
+        self.message_text = text
+        self.valid_words = load_words(WORDLIST_FILENAME)
 
     def get_message_text(self):
         '''
@@ -78,7 +79,7 @@ class Message(object):
         
         Returns: self.message_text
         '''
-        pass #delete this line and replace with your code here
+        return self.message_text
 
     def get_valid_words(self):
         '''
@@ -87,7 +88,8 @@ class Message(object):
         
         Returns: a COPY of self.valid_words
         '''
-        pass #delete this line and replace with your code here
+        valid_words_copy = self.valid_words[:]
+        return valid_words_copy
 
     def build_shift_dict(self, shift):
         '''
@@ -103,7 +105,28 @@ class Message(object):
         Returns: a dictionary mapping a letter (string) to 
                  another letter (string). 
         '''
-        pass #delete this line and replace with your code here
+
+        letters_list = string.ascii_lowercase
+        letters_list_len = len(letters_list)
+        
+        shift_dict = {}
+
+        if 0 <= shift < 26:
+            for letter in letters_list:
+                letter_position = letters_list.index(letter)
+                shifted_position = letter_position + shift
+
+                if shifted_position >= letters_list_len:
+                    shifted_position = abs(letters_list_len - shifted_position)
+                
+                shifted_letter = letters_list[shifted_position]
+                
+                shift_dict.update( {letter : shifted_letter} )
+                shift_dict.update( {letter.upper() : shifted_letter.upper()} )
+        else:
+            return
+        
+        return shift_dict
 
     def apply_shift(self, shift):
         '''
