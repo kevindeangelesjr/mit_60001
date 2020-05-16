@@ -1,5 +1,5 @@
 # Problem Set 4C
-# Name: <your name here>
+# Name: Kevin DeAngeles
 # Collaborators:
 # Time Spent: x:xx
 
@@ -18,14 +18,14 @@ def load_words(file_name):
     take a while to finish.
     '''
     
-    print("Loading word list from file...")
+    #print("Loading word list from file...")
     # inFile: file
     inFile = open(file_name, 'r')
     # wordlist: list of strings
     wordlist = []
     for line in inFile:
         wordlist.extend([word.lower() for word in line.split(' ')])
-    print("  ", len(wordlist), "words loaded.")
+    #print("  ", len(wordlist), "words loaded.")
     return wordlist
 
 def is_word(word_list, word):
@@ -70,7 +70,8 @@ class SubMessage(object):
             self.message_text (string, determined by input text)
             self.valid_words (list, determined using helper function load_words)
         '''
-        pass #delete this line and replace with your code here
+        self.message_text = text
+        self.valid_words = load_words(WORDLIST_FILENAME)
     
     def get_message_text(self):
         '''
@@ -78,7 +79,7 @@ class SubMessage(object):
         
         Returns: self.message_text
         '''
-        pass #delete this line and replace with your code here
+        return self.message_text
 
     def get_valid_words(self):
         '''
@@ -87,7 +88,8 @@ class SubMessage(object):
         
         Returns: a COPY of self.valid_words
         '''
-        pass #delete this line and replace with your code here
+        valid_words_copy = self.valid_words[:]
+        return valid_words_copy
                 
     def build_transpose_dict(self, vowels_permutation):
         '''
@@ -109,7 +111,22 @@ class SubMessage(object):
                  another letter (string). 
         '''
         
-        pass #delete this line and replace with your code here
+        transpose_dict = {}
+        vowels_permutation_list = list(vowels_permutation)
+        vowels_lower_list = list(VOWELS_LOWER)
+
+        for i in range(len(vowels_permutation_list)):
+            vowel = vowels_lower_list[i]
+            mapped_vowel = vowels_permutation_list[i]
+
+            transpose_dict.update( {vowel : mapped_vowel} )
+            transpose_dict.update( {vowel.upper() : mapped_vowel.upper()} )
+
+        for consonant in CONSONANTS_LOWER:
+            transpose_dict.update( {consonant : consonant} )
+            transpose_dict.update( {consonant.upper() : consonant.upper()} )
+        
+        return transpose_dict
     
     def apply_transpose(self, transpose_dict):
         '''
@@ -118,8 +135,18 @@ class SubMessage(object):
         Returns: an encrypted version of the message text, based 
         on the dictionary
         '''
+
+        message_text_list = list(self.message_text)
+        encrypted_message_list = []
+        for char in message_text_list:
+            if char.lower() in VOWELS_LOWER:
+                encrypted_char = transpose_dict.get(char)
+                encrypted_message_list.append(encrypted_char)
+            else:
+                encrypted_message_list.append(char)
         
-        pass #delete this line and replace with your code here
+        encrypted_message = ''.join(encrypted_message_list)
+        return encrypted_message
         
 class EncryptedSubMessage(SubMessage):
     def __init__(self, text):
@@ -132,7 +159,8 @@ class EncryptedSubMessage(SubMessage):
             self.message_text (string, determined by input text)
             self.valid_words (list, determined using helper function load_words)
         '''
-        pass #delete this line and replace with your code here
+        SubMessage.__init__(self, text)
+        self.valid_words = load_words(WORDLIST_FILENAME)
 
     def decrypt_message(self):
         '''
@@ -152,8 +180,27 @@ class EncryptedSubMessage(SubMessage):
         
         Hint: use your function from Part 4A
         '''
-        pass #delete this line and replace with your code here
-    
+        permutations_list = get_permutations('aeiou')
+
+        probability_dict = {}
+
+        for i in permutations_list:
+            transpose_dict = self.build_transpose_dict(i)
+            possible_decrypted_text = self.apply_transpose(transpose_dict)
+            possible_decrypted_text_list = possible_decrypted_text.split(' ')
+            
+            num_valid_words = 0
+            for word in possible_decrypted_text_list:
+                if is_word(self.valid_words, word):
+                    num_valid_words += 1
+            
+            probability_dict.update( {i : num_valid_words} )
+        
+        most_probable_permutation = max(probability_dict, key=probability_dict.get)
+        transpose_dict = self.build_transpose_dict(most_probable_permutation)
+
+        decrypted_text = self.apply_transpose(transpose_dict)
+        return decrypted_text
 
 if __name__ == '__main__':
 
@@ -166,5 +213,24 @@ if __name__ == '__main__':
     print("Actual encryption:", message.apply_transpose(enc_dict))
     enc_message = EncryptedSubMessage(message.apply_transpose(enc_dict))
     print("Decrypted message:", enc_message.decrypt_message())
+    print()
      
-    #TODO: WRITE YOUR TEST CASES HERE
+    message = SubMessage("Hello Everybody!")
+    permutation = "eaiuo"
+    enc_dict = message.build_transpose_dict(permutation)
+    print("Original message:", message.get_message_text(), "Permutation:", permutation)
+    print("Expected encryption:", "Hallu Avarybudy!")
+    print("Actual encryption:", message.apply_transpose(enc_dict))
+    enc_message = EncryptedSubMessage(message.apply_transpose(enc_dict))
+    print("Decrypted message:", enc_message.decrypt_message())
+    print()
+
+    message = SubMessage("Nice to meet you!")
+    permutation = "eaiuo"
+    enc_dict = message.build_transpose_dict(permutation)
+    print("Original message:", message.get_message_text(), "Permutation:", permutation)
+    print("Expected encryption:", "Nica tu maat yuo!")
+    print("Actual encryption:", message.apply_transpose(enc_dict))
+    enc_message = EncryptedSubMessage(message.apply_transpose(enc_dict))
+    print("Decrypted message:", enc_message.decrypt_message())
+    print()
