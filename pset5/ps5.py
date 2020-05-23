@@ -1,5 +1,5 @@
 # 6.0001/6.00 Problem Set 5 - RSS Feed Filter
-# Name:
+# Name: Kevin DeAngeles
 # Collaborators:
 # Time:
 
@@ -33,7 +33,7 @@ def process(url):
         guid = entry.guid
         title = translate_html(entry.title)
         link = entry.link
-        description = translate_html(entry.description)
+        description = translate_html(entry.title)
         pubdate = translate_html(entry.published)
 
         try:
@@ -54,8 +54,30 @@ def process(url):
 
 # Problem 1
 
-# TODO: NewsStory
+class NewsStory(object):
 
+    def __init__(self, guid, title, description, link, pubdate):
+
+        self.guid = guid
+        self.title = title
+        self.description = description
+        self.link = link
+        self.pubdate = pubdate
+    
+    def get_guid(self):
+        return self.guid
+    
+    def get_title(self):
+        return self.title
+    
+    def get_description(self):
+        return self.description
+    
+    def get_link(self):
+        return self.link
+    
+    def get_pubdate(self):
+        return self.pubdate
 
 #======================
 # Triggers
@@ -73,37 +95,129 @@ class Trigger(object):
 # PHRASE TRIGGERS
 
 # Problem 2
-# TODO: PhraseTrigger
+class PhraseTrigger(Trigger):
+    def __init__(self, phrase):
+        self.phrase = phrase.lower()
+    
+    def is_phrase_in(self, text):
+        punctuations = string.punctuation
+        
+        text_list = list(text.lower())
+        parseable_text_list = []
+
+        for char in text_list:
+            if char not in punctuations:
+                parseable_text_list.append(char)
+            else:
+                parseable_text_list.append(" ")
+    
+        parseable_text = ''.join(parseable_text_list)
+        parseable_text = ' '.join(parseable_text.split())
+
+        phrase_list = self.phrase.split(' ')
+        text_list = parseable_text.split(' ')
+
+        for word in phrase_list:
+            if word in text_list:
+                words_match = True
+            else:
+                words_match = False
+                break
+
+        if words_match:
+            if self.phrase in parseable_text:
+                words_match = True
+            else:
+                words_match = False
+
+        return words_match
 
 # Problem 3
-# TODO: TitleTrigger
+class TitleTrigger(PhraseTrigger):
+    def __init__(self, phrase):
+        self.phrase = phrase.lower()
+
+    def evaluate(self, story):
+        """
+        Returns True if an alert should be generated
+        for the given news item, or False otherwise.
+        """
+        title = story.get_title()
+        return self.is_phrase_in(title)
 
 # Problem 4
-# TODO: DescriptionTrigger
+class DescriptionTrigger(PhraseTrigger):
+    def __init__(self, phrase):
+        self.phrase = phrase.lower()
+
+    def evaluate(self, story):
+        """
+        Returns True if an alert should be generated
+        for the given news item, or False otherwise.
+        """
+        description = story.get_description()
+        return self.is_phrase_in(description)
 
 # TIME TRIGGERS
 
 # Problem 5
-# TODO: TimeTrigger
 # Constructor:
 #        Input: Time has to be in EST and in the format of "%d %b %Y %H:%M:%S".
 #        Convert time from string to a datetime before saving it as an attribute.
+class TimeTrigger(Trigger):
+    def __init__(self, time):
+        utc = pytz.UTC
+        self.time = datetime.strptime(time, "%d %b %Y %H:%M:%S")
+        self.time = self.time.replace(tzinfo=utc)
 
 # Problem 6
-# TODO: BeforeTrigger and AfterTrigger
+class BeforeTrigger(TimeTrigger):
+    def __init__(self, time):
+        TimeTrigger.__init__(self, time)
+    
+    def evaluate(self, story):
+        utc = pytz.UTC
+        story_pubdate = story.get_pubdate()
+        story_pubdate = story_pubdate.replace(tzinfo=utc)
+        return self.time > story_pubdate
 
+class AfterTrigger(TimeTrigger):
+    def __init__(self, time):
+        TimeTrigger.__init__(self, time)
+    
+    def evaluate(self, story):
+        utc = pytz.UTC
+        story_pubdate = story.get_pubdate()
+        story_pubdate = story_pubdate.replace(tzinfo=utc)
+        return self.time < story_pubdate
 
 # COMPOSITE TRIGGERS
 
 # Problem 7
-# TODO: NotTrigger
+class NotTrigger(Trigger):
+    def __init__(self, T):
+        self.T = T
+    
+    def evaluate(self, story):
+        return not self.T.evaluate(story)
 
 # Problem 8
-# TODO: AndTrigger
+class AndTrigger(Trigger):
+    def __init__(self, T1, T2):
+        self.T1 = T1
+        self.T2 = T2
+    
+    def evaluate(self, story):
+        return self.T1.evaluate(story) and self.T2.evaluate(story)
 
 # Problem 9
-# TODO: OrTrigger
-
+class OrTrigger(Trigger):
+    def __init__(self, T1, T2):
+        self.T1 = T1
+        self.T2 = T2
+    
+    def evaluate(self, story):
+        return self.T1.evaluate(story) or self.T2.evaluate(story)
 
 #======================
 # Filtering
@@ -119,9 +233,14 @@ def filter_stories(stories, triggerlist):
     # TODO: Problem 10
     # This is a placeholder
     # (we're just returning all the stories, with no filtering)
-    return stories
+    filtered_stories = []
 
+    for trigger in triggerlist:
+        for story in stories:
+            if trigger.evaluate(story):
+                filtered_stories.append(story)
 
+    return filtered_stories
 
 #======================
 # User-Specified Triggers
@@ -147,7 +266,8 @@ def read_trigger_config(filename):
     # line is the list of lines that you need to parse and for which you need
     # to build triggers
 
-    print(lines) # for now, print it so you see what it contains!
+    for line in lines:
+
 
 
 
@@ -157,9 +277,10 @@ def main_thread(master):
     # A sample trigger list - you might need to change the phrases to correspond
     # to what is currently in the news
     try:
-        t1 = TitleTrigger("election")
-        t2 = DescriptionTrigger("Trump")
-        t3 = DescriptionTrigger("Clinton")
+        #triggerlist = read_trigger_config("triggers.txt")
+        t1 = TitleTrigger("coronavirus")
+        t2 = TitleTrigger("Trump")
+        t3 = TitleTrigger("Biden")
         t4 = AndTrigger(t2, t3)
         triggerlist = [t1, t4]
 
@@ -202,7 +323,7 @@ def main_thread(master):
 
             # Get stories from Yahoo's Top Stories RSS news feed
             stories.extend(process("http://news.yahoo.com/rss/topstories"))
-
+            
             stories = filter_stories(stories, triggerlist)
 
             list(map(get_cont, stories))
